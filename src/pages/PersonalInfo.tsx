@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Phone, Camera, Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,10 @@ const PersonalInfo = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -70,6 +72,78 @@ const PersonalInfo = () => {
     setSaving(false);
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file',
+        description: 'Please upload an image file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please upload an image smaller than 5MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploading(true);
+    
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      toast({
+        title: 'Upload failed',
+        description: uploadError.message,
+        variant: 'destructive',
+      });
+      setUploading(false);
+      return;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    // Update profile with new avatar URL
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: publicUrl })
+      .eq('id', user.id);
+
+    if (updateError) {
+      toast({
+        title: 'Update failed',
+        description: updateError.message,
+        variant: 'destructive',
+      });
+    } else {
+      setFormData({ ...formData, avatar_url: publicUrl });
+      toast({
+        title: 'Avatar updated',
+        description: 'Your profile photo has been updated',
+      });
+    }
+    
+    setUploading(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -107,8 +181,24 @@ const PersonalInfo = () => {
               ) : (
                 <User className="w-10 h-10 text-primary" />
               )}
+              {uploading && (
+                <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-full">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              )}
             </div>
-            <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg">
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarUpload}
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
+            >
               <Camera className="w-4 h-4 text-primary-foreground" />
             </button>
           </div>
@@ -165,18 +255,6 @@ const PersonalInfo = () => {
             </div>
           </div>
 
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">
-              Avatar URL
-            </label>
-            <Input
-              type="url"
-              placeholder="https://example.com/avatar.jpg"
-              value={formData.avatar_url}
-              onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
-              className="h-14"
-            />
-          </div>
         </div>
 
         <Button
