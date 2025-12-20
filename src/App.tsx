@@ -15,6 +15,11 @@ import BookingConfirmation from "./pages/BookingConfirmation";
 import JobTracking from "./pages/JobTracking";
 import Review from "./pages/Review";
 import Profile from "./pages/Profile";
+import PersonalInfo from "./pages/PersonalInfo";
+import SavedAddresses from "./pages/SavedAddresses";
+import PaymentMethods from "./pages/PaymentMethods";
+import Settings from "./pages/Settings";
+import Support from "./pages/Support";
 import Bookings from "./pages/Bookings";
 import Chat from "./pages/Chat";
 import About from "./pages/About";
@@ -64,6 +69,11 @@ function AppRoutes() {
       <Route path="/review/:id" element={<ProtectedRoute><Review /></ProtectedRoute>} />
       <Route path="/review" element={<ProtectedRoute><Review /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/profile/personal" element={<ProtectedRoute><PersonalInfo /></ProtectedRoute>} />
+      <Route path="/profile/addresses" element={<ProtectedRoute><SavedAddresses /></ProtectedRoute>} />
+      <Route path="/profile/payments" element={<ProtectedRoute><PaymentMethods /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
       <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
       <Route path="/chat/:conversationId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
       <Route path="/explore" element={<ProtectedRoute><Home /></ProtectedRoute>} />
