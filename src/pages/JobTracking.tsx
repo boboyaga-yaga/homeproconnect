@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Phone, MessageCircle, MapPin, Clock, X } from 'lucide-react';
+import { ArrowLeft, Phone, MessageCircle, MapPin, Clock, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusTracker } from '@/components/StatusTracker';
 import { providers } from '@/data/mockData';
+
+// Lazy load the map component
+const MapView = lazy(() => import('@/components/MapView').then(m => ({ default: m.MapView })));
 
 type JobStatus = 'confirmed' | 'on-the-way' | 'in-progress' | 'completed';
 
@@ -12,7 +15,7 @@ const JobTracking = () => {
   const location = useLocation();
   const [status, setStatus] = useState<JobStatus>('confirmed');
 
-  const { service, provider: selectedProvider } = location.state || {};
+  const { service, provider: selectedProvider, booking } = location.state || {};
   const provider = selectedProvider || providers[0];
 
   // Simulate status progression
@@ -29,10 +32,10 @@ const JobTracking = () => {
   useEffect(() => {
     if (status === 'completed') {
       setTimeout(() => {
-        navigate('/review', { state: { service, provider } });
+        navigate('/review', { state: { service, provider, booking } });
       }, 2000);
     }
-  }, [status, navigate, service, provider]);
+  }, [status, navigate, service, provider, booking]);
 
   const statusMessages: Record<JobStatus, { title: string; subtitle: string }> = {
     confirmed: {
@@ -41,7 +44,7 @@ const JobTracking = () => {
     },
     'on-the-way': {
       title: 'On the Way',
-      subtitle: `${provider.name} will arrive in ${provider.eta}`,
+      subtitle: `${provider.name} will arrive in ${provider.eta || '15 min'}`,
     },
     'in-progress': {
       title: 'Service in Progress',
@@ -51,6 +54,20 @@ const JobTracking = () => {
       title: 'Service Completed',
       subtitle: 'How was your experience?',
     },
+  };
+
+  const getServiceIcon = (serviceName: string) => {
+    const iconMap: Record<string, string> = {
+      'Clothes Selling': '👕',
+      'Shoes & Sneakers': '👟',
+      'Laptop Repair': '💻',
+      'Bubu Gown & Ankara': '✨',
+      'Lash Fixing': '👁️',
+      'Hair Styling': '💇',
+      'Makeup Services': '💄',
+      'Phone Repair': '📱',
+    };
+    return iconMap[serviceName] || '🛠️';
   };
 
   return (
@@ -86,17 +103,24 @@ const JobTracking = () => {
           <StatusTracker currentStatus={status} />
         </div>
 
-        {/* Map Placeholder */}
+        {/* Live Map */}
         <div className="bg-card rounded-2xl overflow-hidden shadow-card">
-          <div className="h-48 bg-muted flex items-center justify-center relative">
-            <div className="text-center">
-              <MapPin className="w-8 h-8 text-primary mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Live location tracking</p>
-            </div>
+          <div className="h-56 relative">
+            <Suspense fallback={
+              <div className="h-full w-full flex items-center justify-center bg-muted">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              </div>
+            }>
+              <MapView 
+                providerName={provider.name}
+                isMoving={status === 'on-the-way'}
+              />
+            </Suspense>
+            
             {status === 'on-the-way' && (
-              <div className="absolute bottom-4 left-4 bg-card px-3 py-2 rounded-lg shadow-md flex items-center gap-2">
+              <div className="absolute bottom-4 left-4 bg-card px-3 py-2 rounded-lg shadow-md flex items-center gap-2 z-[1000]">
                 <Clock className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">ETA: {provider.eta}</span>
+                <span className="text-sm font-medium">ETA: {provider.eta || '15 min'}</span>
               </div>
             )}
           </div>
@@ -106,12 +130,12 @@ const JobTracking = () => {
         <div className="bg-card rounded-2xl p-5 shadow-card">
           <div className="flex items-center gap-4 mb-4">
             <img
-              src={provider.avatar}
+              src={provider.avatar || provider.avatar_url}
               alt={provider.name}
-              className="w-14 h-14 rounded-2xl object-cover"
+              className="w-14 h-14 rounded-2xl object-cover flex-shrink-0"
             />
-            <div className="flex-1">
-              <h3 className="font-semibold text-foreground">{provider.name}</h3>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-foreground truncate">{provider.name}</h3>
               <p className="text-sm text-muted-foreground">
                 ⭐ {provider.rating} • {provider.experience}
               </p>
@@ -136,15 +160,22 @@ const JobTracking = () => {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Service</span>
-              <span className="text-foreground font-medium">{service?.name || 'Home Cleaning'}</span>
+              <span className="text-foreground font-medium flex items-center gap-2">
+                <span>{getServiceIcon(service?.name || '')}</span>
+                {service?.name || 'Service'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Booking ID</span>
-              <span className="text-foreground font-medium">#BK-001</span>
+              <span className="text-foreground font-medium">
+                #{booking?.id?.slice(0, 8).toUpperCase() || 'BK-001'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Total</span>
-              <span className="text-foreground font-bold">$125</span>
+              <span className="text-foreground font-bold">
+                ₦{booking?.price?.toLocaleString() || service?.price_min?.toLocaleString() || '0'}
+              </span>
             </div>
           </div>
         </div>
