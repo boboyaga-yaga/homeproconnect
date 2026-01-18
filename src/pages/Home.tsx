@@ -119,15 +119,13 @@ const Home = () => {
                   key={service.id}
                   delay={index * 0.05}
                   onClick={() => navigate(`/service/${service.id}`)}
-                  className="p-3 text-center overflow-hidden"
+                  className="p-4 text-center"
                 >
-                  <div className="w-12 h-12 mx-auto mb-2 bg-primary/10 rounded-xl flex items-center justify-center">
-                    <span className="text-2xl">{service.icon}</span>
-                  </div>
-                  <h3 className="font-medium text-foreground text-xs mb-1 line-clamp-2 leading-tight min-h-[2rem]">
+                  <div className="text-3xl mb-2">{service.icon}</div>
+                  <h3 className="font-medium text-foreground text-sm mb-1 line-clamp-1">
                     {service.name}
                   </h3>
-                  <p className="text-[10px] text-muted-foreground truncate">
+                  <p className="text-xs text-muted-foreground">
                     {formatPrice(Number(service.price_min), Number(service.price_max))}
                   </p>
                 </AnimatedCard>

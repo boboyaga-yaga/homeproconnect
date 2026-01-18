@@ -96,7 +96,7 @@ const Auth = () => {
           navigate('/home', { replace: true });
         }
       } else {
-        const { error } = await signUp(formData.email, formData.password, formData.name, formData.phone);
+        const { error } = await signUp(formData.email, formData.password, formData.name);
         if (error) {
           if (error.message.includes('User already registered')) {
             toast({

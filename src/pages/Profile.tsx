@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -11,11 +10,9 @@ import {
   LogOut,
   ChevronRight,
   Shield,
-  Loader2,
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { currentUser } from '@/data/mockData';
 
 const menuItems = [
   { icon: User, label: 'Personal Information', path: '/profile/personal' },
@@ -26,84 +23,8 @@ const menuItems = [
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
-interface Profile {
-  full_name: string | null;
-  phone: string | null;
-  avatar_url: string | null;
-}
-
-interface Stats {
-  bookings: number;
-  avgRating: number;
-  reviews: number;
-}
-
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [stats, setStats] = useState<Stats>({ bookings: 0, avgRating: 0, reviews: 0 });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchProfileAndStats = async () => {
-      if (!user) return;
-
-      // Fetch profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('full_name, phone, avatar_url')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (profileData) {
-        setProfile(profileData);
-      }
-
-      // Fetch stats
-      const { count: bookingsCount } = await supabase
-        .from('bookings')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      const { count: reviewsCount } = await supabase
-        .from('reviews')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      const { data: reviewsData } = await supabase
-        .from('reviews')
-        .select('rating')
-        .eq('user_id', user.id);
-
-      const avgRating = reviewsData && reviewsData.length > 0
-        ? reviewsData.reduce((sum, r) => sum + r.rating, 0) / reviewsData.length
-        : 0;
-
-      setStats({
-        bookings: bookingsCount || 0,
-        avgRating: Number(avgRating.toFixed(1)),
-        reviews: reviewsCount || 0,
-      });
-
-      setLoading(false);
-    };
-
-    fetchProfileAndStats();
-  }, [user]);
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/auth', { replace: true });
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-muted pb-24">
@@ -122,29 +43,19 @@ const Profile = () => {
         {/* User Info */}
         <div className="flex items-center gap-4">
           <div className="relative">
-            {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={profile.full_name || 'User'}
-                className="w-20 h-20 rounded-2xl object-cover border-4 border-primary-foreground/20"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-2xl bg-primary-foreground/20 flex items-center justify-center border-4 border-primary-foreground/20">
-                <User className="w-8 h-8 text-primary-foreground" />
-              </div>
-            )}
+            <img
+              src={currentUser.avatar}
+              alt={currentUser.name}
+              className="w-20 h-20 rounded-2xl object-cover border-4 border-primary-foreground/20"
+            />
             <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-success rounded-full flex items-center justify-center border-2 border-primary">
               <Shield className="w-4 h-4 text-success-foreground" />
             </div>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-primary-foreground">
-              {profile?.full_name || 'Welcome!'}
-            </h2>
-            <p className="text-primary-foreground/70 text-sm">{user?.email}</p>
-            {profile?.phone && (
-              <p className="text-primary-foreground/70 text-sm">{profile.phone}</p>
-            )}
+            <h2 className="text-xl font-bold text-primary-foreground">{currentUser.name}</h2>
+            <p className="text-primary-foreground/70 text-sm">{currentUser.email}</p>
+            <p className="text-primary-foreground/70 text-sm">{currentUser.phone}</p>
           </div>
         </div>
       </div>
@@ -174,7 +85,7 @@ const Profile = () => {
 
         {/* Logout */}
         <button
-          onClick={handleLogout}
+          onClick={() => navigate('/')}
           className="w-full mt-6 flex items-center justify-center gap-2 p-4 bg-destructive/10 rounded-2xl text-destructive font-medium hover:bg-destructive/20 transition-colors"
         >
           <LogOut className="w-5 h-5" />
@@ -188,15 +99,15 @@ const Profile = () => {
           <h3 className="font-semibold text-foreground mb-4">Your Activity</h3>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-primary">{stats.bookings}</p>
+              <p className="text-2xl font-bold text-primary">12</p>
               <p className="text-xs text-muted-foreground">Bookings</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-success">{stats.avgRating || '-'}</p>
+              <p className="text-2xl font-bold text-success">4.8</p>
               <p className="text-xs text-muted-foreground">Avg Rating</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-accent">{stats.reviews}</p>
+              <p className="text-2xl font-bold text-accent">3</p>
               <p className="text-xs text-muted-foreground">Reviews</p>
             </div>
           </div>

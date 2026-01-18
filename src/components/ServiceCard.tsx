@@ -1,27 +1,13 @@
-import { 
-  Sparkles, 
-  Shirt, 
-  Footprints, 
-  Laptop, 
-  Eye, 
-  Scissors, 
-  Palette, 
-  Smartphone,
-  ShoppingBag,
-  Settings
-} from 'lucide-react';
+import { Sparkles, Wind, Wrench, Zap, Hammer, Paintbrush, Settings } from 'lucide-react';
 import { Service } from '@/types';
 
 const iconMap: Record<string, React.ElementType> = {
   sparkles: Sparkles,
-  shirt: Shirt,
-  footprints: Footprints,
-  laptop: Laptop,
-  eye: Eye,
-  scissors: Scissors,
-  palette: Palette,
-  smartphone: Smartphone,
-  shopping: ShoppingBag,
+  wind: Wind,
+  wrench: Wrench,
+  zap: Zap,
+  hammer: Hammer,
+  paintbrush: Paintbrush,
   settings: Settings,
 };
 

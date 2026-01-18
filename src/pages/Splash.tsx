@@ -29,7 +29,6 @@ const Splash = () => {
         {/* Tagline */}
         <p className="text-primary-foreground/80 text-lg font-medium">
           Trusted. Skilled. Reliable.
-          Owned By AUSTIN CHIDERA UNEGBU
         </p>
       </div>
 
